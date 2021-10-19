@@ -1,0 +1,12 @@
+---
+title: "P8105 HW3 jl6046"
+author: "Brian Jo Hsuan Lee"
+date: 2021-10-18
+output: github_document
+---
+
+Import packages
+```{r}
+library(tidyverse)
+```
+
