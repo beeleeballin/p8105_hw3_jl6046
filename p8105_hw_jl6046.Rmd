@@ -60,3 +60,27 @@ instacart_aisle_pop =
 head(instacart_aisle_pop, 5)
 ```
 
+```{r}
+instacart_aisle_pop %>% 
+  filter(count > 10000) %>% 
+  mutate(
+    aisle_ord = factor(aisle),
+    aisle_ord = forcats::fct_reorder(aisle_ord, count, .desc = TRUE)
+  ) %>% 
+  ggplot(., aes(x = aisle_ord, y = count, fill = aisle)) +
+  geom_bar(stat="identity") +
+  labs(
+    title = "Most Popular Aisles",
+    x = "Item Count",
+    y = "Aisle"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(hjust = 1, angle = 90),
+    legend.position = "none",
+    legend.title = element_blank(),
+    legend.key.size = unit(0.5, 'cm'),
+    legend.text = element_text(size = 5)
+  )
+```
+
