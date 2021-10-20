@@ -39,29 +39,28 @@ str(instacart)
 
 There are 134 distinct aisles in the data set.
 ```{r}
-instacart_aisle_count = 
+aisle_count = 
   instacart %>% 
   select(aisle) %>% 
   distinct()
 
-instacart_aisle_count
+aisle_count
 ```
 
 And among them, the 'fresh vegetables', 'fresh fruits', and 'packaged vegetables fruits' were the most popular aisles from which items were bought.
 ```{r}
-instacart_aisle_pop = 
+aisle_pop = 
   instacart %>% 
-  mutate(
-    count = 1
-  ) %>% 
+  mutate(count = 1) %>% 
   aggregate(count ~ aisle, data = ., sum) %>% 
   arrange(desc(count))
 
-head(instacart_aisle_pop, 5)
+head(aisle_pop, 5)
 ```
 
+With fresh vegetables and fresh fruits surpassing 150 thousand purchases, see the other 47 popular aisles with over 10 thousand purchases. 
 ```{r}
-instacart_aisle_pop %>% 
+aisle_pop %>% 
   filter(count > 10000) %>% 
   mutate(
     aisle_ord = factor(aisle),
@@ -82,5 +81,67 @@ instacart_aisle_pop %>%
     legend.key.size = unit(0.5, 'cm'),
     legend.text = element_text(size = 5)
   )
+```
+
+The following table shows the number of purchases for each of the 3 most popular items from aisles "baking ingredients", "dog food care", and "pacakged vegetables".
+```{r, message=FALSE}
+bi_pop =
+  instacart %>%
+  select(aisle, product_name) %>% 
+  filter(aisle == "baking ingredients") %>%
+  group_by(aisle, product_name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  slice(1:3) %>% 
+  ungroup()
+
+dfc_pop =
+  instacart %>%
+  select(aisle, product_name) %>% 
+  filter(aisle == "dog food care") %>%
+  group_by(aisle, product_name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  slice(1:3) %>% 
+  ungroup()
+
+pvf_pop =
+  instacart %>%
+  select(aisle, product_name) %>% 
+  filter(aisle == "packaged vegetables fruits") %>%
+  group_by(aisle, product_name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  slice(1:3) %>% 
+  ungroup()
+
+item_pop = 
+  bind_rows(bi_pop, dfc_pop, pvf_pop)
+
+item_pop
+```
+
+The following is a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week.
+```{r, message=FALSE, warning=FALSE}
+aic_week =
+  instacart %>% 
+  filter(product_name == c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  select(order_dow, order_hour_of_day, product_name) %>% 
+  mutate(
+    order_dow = recode(order_dow, `0` = "sunday", `1` = "monday", `2` = "tuesday", `3` = "wednesday", `4` = "thursday", `5` = "friday", `6` = "saturday")
+  ) %>% 
+  group_by(order_dow, product_name) %>% 
+  summarize(mean_hour = mean(order_hour_of_day, )) %>% 
+  mutate(
+    mean_hour = round(mean_hour, 1)
+  ) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  ) %>% 
+  select(product_name, sunday, monday, tuesday, wednesday, thursday, friday, saturday) %>% 
+  ungroup()
+
+aic_week
 ```
 
