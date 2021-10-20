@@ -80,10 +80,7 @@ aisle_pop %>%
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.text.x = element_text(hjust = 1, angle = 90),
-    legend.position = "none",
-    legend.title = element_blank(),
-    legend.key.size = unit(0.5, 'cm'),
-    legend.text = element_text(size = 5)
+    legend.position = "none"
   )
 ```
 
@@ -129,7 +126,7 @@ The following is a table showing the mean hour of the day at which Pink Lady App
 ```{r, message=FALSE, warning=FALSE}
 aic_week =
   instacart %>% 
-  filter(product_name == c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
   select(order_dow, order_hour_of_day, product_name) %>% 
   mutate(
     order_dow = recode(order_dow, `0` = "sunday", `1` = "monday", `2` = "tuesday", `3` = "wednesday", `4` = "thursday", `5` = "friday", `6` = "saturday")
@@ -158,21 +155,17 @@ data("brfss_smart2010")
 brfss_df = 
   brfss_smart2010 %>% 
   janitor::clean_names() %>% 
-  filter(topic == "Overall Health", response == c("Excellent", "Very Good", "Good", "Fair", "Poor")) %>% 
+  filter(topic == "Overall Health", response == c("Excellent", "Very good", "Good", "Fair", "Poor")) %>% 
   mutate(
-    response = factor(response, levels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
+    response = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"))
   )
 ```
 
-
-Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
-Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
-
-No states had observations from more than 7 locations in 2002, but Florida achieved that number in 2010. 
+No states had observations from more than 7 locations in 2002, but FL achieved it in 2010.
 ```{r, warning=FALSE, message=FALSE}
 more_than_7_df = 
   brfss_df %>% 
-  filter(year == c(2002, 2010)) %>% 
+  filter(year %in% c(2002, 2010)) %>% 
   select(year, locationabbr, locationdesc) %>% 
   distinct() %>% 
   group_by(year, locationabbr) %>% 
@@ -187,12 +180,61 @@ more_than_7_df =
     `>7_in_2010` = `2010` > 7
   ) %>% 
   select(locationabbr, `>7_in_2002`, `>7_in_2010`) %>% 
+  filter(`>7_in_2002` == TRUE | `>7_in_2010` == TRUE) %>% 
   arrange(locationabbr)
 
 more_than_7_df
 ```
 
-```{r}
+Show the mean value of Excellent responses across locations within a state by year as a spaghetti plot. This is not a really helpful plot to be honest. 
+```{r, message=FALSE}
+er_df = 
+  brfss_df %>%
+  filter(response == "Excellent") %>% 
+  select(year, locationabbr, locationdesc, data_value) %>% 
+  group_by(year, locationabbr) %>% 
+  summarize(mean_value = mean(data_value, na.rm = TRUE)) %>% 
+  ungroup()
 
+ggplot(er_df, aes(x = year, y = mean_value, color = locationabbr)) +
+  geom_line(alpha = 0.5) +
+  labs(
+    title = "Mean data value of Excellent responses across state locations",
+    x = "Year",
+    y = "Value"
+  ) + 
+  theme(
+    legend.title = element_blank(),
+    legend.position = "right",
+    legend.text = element_text(size = 6),
+    legend.key.size = unit(0.35, 'cm')
+  )
+```
+
+The following is a two-panel plot showing the distribution of data values according to their responses in 4 NY locations in 2006 and 2010.
+```{r}
+ny_df = 
+  brfss_df %>% 
+  filter(year %in% c(2006, 2010), locationabbr == "NY") %>% 
+  mutate(
+    locationdesc = replace(locationdesc, locationdesc == "NY - Kings County", "Kings"),
+    locationdesc = replace(locationdesc, locationdesc == "NY - New York County", "New York"),
+    locationdesc = replace(locationdesc, locationdesc == "NY - Suffolk County", "Suffolk"),
+    locationdesc = replace(locationdesc, locationdesc == "NY - Westchester County", "Westchester")
+  ) %>% 
+  select(year, locationdesc, data_value, response)
+
+ggplot(ny_df, aes(x = data_value, y = locationdesc, color = response)) +
+  geom_point() +
+  facet_grid(~year)+
+  labs(
+    title = "Response Data Values for 4 NY Locations",
+    x = "Data Value",
+    y = ""
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.title = element_blank()
+  )
 ```
 
