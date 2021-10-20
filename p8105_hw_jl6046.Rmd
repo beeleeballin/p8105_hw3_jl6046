@@ -8,9 +8,6 @@ output: github_document
 Import packages
 ```{r, message=FALSE}
 library(tidyverse)
-library(httr)
-library(jsonlite)
-library(patchwork)
 library(p8105.datasets)
 ```
 
@@ -41,14 +38,14 @@ data("instacart")
 str(instacart)
 ```
 
-There are 134 distinct aisles in the data set.
+There are 134 distinct aisles in the dataset.
 ```{r}
 aisle_count = 
   instacart %>% 
   select(aisle) %>% 
   distinct()
 
-aisle_count
+dim(aisle_count)
 ```
 
 And among them, the 'fresh vegetables', 'fresh fruits', and 'packaged vegetables fruits' were the most popular aisles from which items were bought.
@@ -84,7 +81,7 @@ aisle_pop %>%
   )
 ```
 
-The following table shows the number of purchases for each of the 3 most popular items from aisles "baking ingredients", "dog food care", and "pacakged vegetables".
+The following table shows the number of purchases for each of the 3 most popular items from aisles "baking ingredients", "dog food care", and "packaged vegetables".
 ```{r, message=FALSE}
 bi_pop =
   instacart %>%
@@ -119,7 +116,10 @@ pvf_pop =
 item_pop = 
   bind_rows(bi_pop, dfc_pop, pvf_pop)
 
-item_pop
+knitr::kable(item_pop,
+             format = "simple", 
+             col.names = str_to_title(names(item_pop))
+)
 ```
 
 The following is a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week.
@@ -143,25 +143,29 @@ aic_week =
   select(product_name, sunday, monday, tuesday, wednesday, thursday, friday, saturday) %>% 
   ungroup()
 
-aic_week
+knitr::kable(aic_week,
+             format = "simple", 
+             col.names = str_to_title(names(aic_week))
+)
+
 ```
 
 ## Problem 2: BRFSS
 
-Load and clean up the BRFSS data set for this problem
+Load and clean up the BRFSS dataset for this problem.
 ```{r, warning=FALSE}
 data("brfss_smart2010")
 
 brfss_df = 
   brfss_smart2010 %>% 
   janitor::clean_names() %>% 
-  filter(topic == "Overall Health", response == c("Excellent", "Very good", "Good", "Fair", "Poor")) %>% 
+  filter(topic == "Overall Health", response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) %>% 
   mutate(
     response = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"))
   )
 ```
 
-No states had observations from more than 7 locations in 2002, but FL achieved it in 2010.
+MA, NJ, PA had observations from more than 7 locations in 2002, and CA, FL, MD, NC, NE,  NY, OH, TX WA achieved it in 2010 as well in addition to the 3 states in 2002 with the excpetion of PA. 
 ```{r, warning=FALSE, message=FALSE}
 more_than_7_df = 
   brfss_df %>% 
@@ -199,7 +203,7 @@ er_df =
 ggplot(er_df, aes(x = year, y = mean_value, color = locationabbr)) +
   geom_line(alpha = 0.5) +
   labs(
-    title = "Mean data value of Excellent responses across state locations",
+    title = "Mean Data Value of Excellent responses across locations",
     x = "Year",
     y = "Value"
   ) + 
@@ -217,24 +221,44 @@ ny_df =
   brfss_df %>% 
   filter(year %in% c(2006, 2010), locationabbr == "NY") %>% 
   mutate(
-    locationdesc = replace(locationdesc, locationdesc == "NY - Kings County", "Kings"),
-    locationdesc = replace(locationdesc, locationdesc == "NY - New York County", "New York"),
-    locationdesc = replace(locationdesc, locationdesc == "NY - Suffolk County", "Suffolk"),
-    locationdesc = replace(locationdesc, locationdesc == "NY - Westchester County", "Westchester")
-  ) %>% 
-  select(year, locationdesc, data_value, response)
-
-ggplot(ny_df, aes(x = data_value, y = locationdesc, color = response)) +
+    locationdesc = replace(locationdesc, locationdesc == "NY - New York County", "NY - NewYork County")
+  ) %>%
+  separate(col = locationdesc, into = c('prefix', 'dash', 'county', 'suffix'), sep = ' ') %>%
+  select(year, county, data_value, response)
+  
+ggplot(ny_df, aes(x = county, y = data_value, color = response)) +
   geom_point() +
   facet_grid(~year)+
   labs(
     title = "Response Data Values for 4 NY Locations",
-    x = "Data Value",
+    x = " Value",
     y = ""
   ) +
   theme(
     plot.title = element_text(hjust = 0.5),
-    legend.title = element_blank()
+    legend.title = element_blank(),
+    axis.text.x = element_text(hjust = 1, angle = 90)
   )
 ```
+
+##Problem 3:
+
+The tidied accelerometer dataset (35 x 1444) includes a patient's motion per minute record of the 1440 minutes in a day for 5 full weeks. The additional 4 variables are a unique identifier for the 35 days investigated, week number, day of the week, and whether the day is a weekday or a weekend.
+
+```{r, message=FALSE}
+acc_df = 
+  read_csv("./accel_data.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    day_or_end = day %in% c("Saturday", "Sunday"),
+    day_or_end = replace(day_or_end, day_or_end == TRUE, "Weekend"),
+    day_or_end = replace(day_or_end, day_or_end == FALSE, "Weekday"),
+    day_or_end = factor(day_or_end),
+    day = factor(day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+  ) %>% 
+  select(day_id, week, day, day_or_end, everything())
+
+dim(acc_df)
+```
+
 
