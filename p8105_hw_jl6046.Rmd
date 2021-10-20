@@ -8,6 +8,8 @@ output: github_document
 Import packages
 ```{r, message=FALSE}
 library(tidyverse)
+library(httr)
+library(jsonlite)
 library(patchwork)
 library(p8105.datasets)
 ```
@@ -30,6 +32,8 @@ options(
 scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
+
+##Problem 1: Instacart Purchases
 
 The instacart dataset shows purchase records labeled with buyers, time, and other relevant identifiers, such as aisle and department. It has 1384617 observations and 15 variables, with a purchased item on each row. For example, we could see that a customer bought a Bulgarian yogurt from the yogurt aisle in the dairy department and a Cucumber Kirby from the fresh vegetables aisle in the produce department on the same day.
 ```{r}
@@ -143,5 +147,20 @@ aic_week =
   ungroup()
 
 aic_week
+```
+
+## Problem 2: BRFSS
+
+Load and clean up the BRFSS data set for this problem
+```{r, warning=FALSE}
+data("brfss_smart2010")
+
+brfss_df = 
+  brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health", response == c("Excellent", "Very Good", "Good", "Fair", "Poor")) %>% 
+  mutate(
+    response = factor(response, levels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
+  )
 ```
 
