@@ -248,7 +248,7 @@ The tidied accelerometer dataset (35 x 1444) includes a patient's motion per min
 
 ```{r, message=FALSE}
 acc_df = 
-  read_csv("./accel_data.csv") %>% 
+  read_csv("./local_files/accel_data.csv") %>% 
   janitor::clean_names() %>% 
   mutate(
     day_or_end = day %in% c("Saturday", "Sunday"),
